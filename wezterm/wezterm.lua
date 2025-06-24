@@ -1,62 +1,77 @@
 local wezterm = require("wezterm")
 local config = wezterm.config_builder()
 
--- Performance optimizations for Wayland
-config.enable_wayland = true
-config.front_end = "WebGpu" -- Use GPU acceleration
-config.webgpu_power_preference = "HighPerformance"
+-- Detect if we're running in GUI mode
+local is_gui = wezterm.target_triple:find("windows") or os.getenv("DISPLAY") or os.getenv("WAYLAND_DISPLAY")
 
--- Reduce compositor overhead
-config.window_background_opacity = 0.98 -- Remove transparency for better performance
--- Or if you need transparency, use a higher value like 0.98
+-- GUI-specific settings (only apply when running with GUI)
+if is_gui then
+	-- Performance optimizations for Wayland
+	config.enable_wayland = true
+	config.front_end = "WebGpu"
+	config.webgpu_power_preference = "HighPerformance"
 
--- Font optimizations
-config.font = wezterm.font("FiraCode NerdFont", { weight = "Medium" })
-config.font_size = 16.0
-config.harfbuzz_features = { "calt=1", "clig=1", "liga=1" } -- Optimize ligatures
-config.freetype_load_target = "Normal"
-config.freetype_render_target = "Normal"
+	-- Window and visual settings
+	config.window_background_opacity = 0.98
+	config.font = wezterm.font("FiraCode NerdFont", { weight = "Medium" })
+	config.font_size = 16.0
+	config.harfbuzz_features = { "calt=1", "clig=1", "liga=1" }
+	config.freetype_load_target = "Normal"
+	config.freetype_render_target = "Normal"
 
--- Tab bar optimizations
-config.use_fancy_tab_bar = false -- Simpler rendering
-config.hide_tab_bar_if_only_one_tab = true
-config.tab_bar_at_bottom = false
+	-- Tab bar settings
+	config.use_fancy_tab_bar = false
+	config.hide_tab_bar_if_only_one_tab = true
+	config.tab_bar_at_bottom = false
+	config.enable_tab_bar = true
 
--- Reduce animation overhead
-config.animation_fps = 60
-config.max_fps = 60
+	-- Animation settings
+	config.animation_fps = 60
+	config.max_fps = 60
 
--- Load plugins (consider caching these locally)
+	-- Color scheme
+	config.color_scheme = "Catppuccin Frappe"
+end
+
+-- Load plugins
 local workspace_switcher = wezterm.plugin.require("https://github.com/MLFlexer/smart_workspace_switcher.wezterm")
 local resurrect = wezterm.plugin.require("https://github.com/MLFlexer/resurrect.wezterm")
 
--- SSH Configuration
+-- Domain configuration
 config.ssh_domains = wezterm.default_ssh_domains()
 for _, dom in ipairs(config.ssh_domains) do
 	dom.assume_shell = "Posix"
 end
 
--- Basic Configuration
-config.color_scheme = "Catppuccin Frappe"
-config.enable_tab_bar = true
 config.unix_domains = {
 	{
-		name = "server",
+		name = "unix",
 		socket_path = "/tmp/wezterm-mux-sock",
-		-- For remote servers, use:
-		-- proxy_command = {"ssh", "your-server", "wezterm", "cli", "proxy"},
+	},
+	{
+		name = "server",
+		proxy_command = { "ssh", "server@192.168.50.101", "wezterm", "cli", "proxy" },
 	},
 }
 
--- Key binding to connect to server multiplexer
+-- Set default domain based on environment
+config.default_domain = is_gui and "local" or "unix"
 
--- Key Bindings (keeping your existing ones)
+-- Unified key bindings
 config.keys = {
-	-- Workspace Switcher Plugin
+	-- Smart workspace switcher (domain-aware)
 	{
 		key = "s",
 		mods = "ALT",
 		action = workspace_switcher.switch_workspace(),
+	},
+	{
+		key = "c",
+		mods = "ALT",
+		action = wezterm.action.SwitchToWorkspace({
+			name = "server",
+			spawn = { domain = { DomainName = "server" } },
+		}),
 	},
 	{
 		key = "t",
@@ -83,6 +98,8 @@ config.keys = {
 			})
 		end),
 	},
+
+	-- Domain-aware pane/tab management
 	{
 		key = "Enter",
 		mods = "ALT",
@@ -98,6 +115,8 @@ config.keys = {
 		mods = "ALT|SHIFT",
 		action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }),
 	},
+
+	-- Navigation
 	{
 		key = "h",
 		mods = "ALT",
@@ -119,7 +138,7 @@ config.keys = {
 		action = wezterm.action.ActivatePaneDirection("Down"),
 	},
 
-	-- Copy/Paste
+	-- Copy/Paste (GUI only)
 	{
 		key = "c",
 		mods = "CTRL|SHIFT",
@@ -143,14 +162,16 @@ workspace_switcher.apply_to_config(config, {
 	end,
 })
 
--- Optimized Event Handlers
-wezterm.on("gui-startup", function(cmd)
-	local _, _, window = wezterm.mux.spawn_window(cmd or {})
-	window:gui_window():maximize()
-end)
+-- GUI-specific event handlers
+if is_gui then
+	wezterm.on("gui-startup", function(cmd)
+		local _, _, window = wezterm.mux.spawn_window(cmd or {})
+		window:gui_window():maximize()
+	end)
 
-wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_width)
-	return tab.tab_title and #tab.tab_title > 0 and tab.tab_title or tab.active_pane.title
-end)
+	wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_width)
+		return tab.tab_title and #tab.tab_title > 0 and tab.tab_title or tab.active_pane.title
+	end)
+end
 
 return config
