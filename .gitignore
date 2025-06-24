@@ -1,0 +1,6 @@
+*
+
+!wezterm/
+!nvim/
+!wezterm/**
+!nvim/**
