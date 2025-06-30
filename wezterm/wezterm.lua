@@ -79,7 +79,16 @@ config.keys = {
 		mods = "ALT",
 		action = workspace_switcher.switch_workspace(),
 	},
-
+	{
+		key = "e",
+		mods = "SUPER",
+		action = wezterm.action.DisableDefaultAssignment,
+	},
+	{
+		key = "t",
+		mods = "SUPER",
+		action = wezterm.action.DisableDefaultAssignment,
+	},
 	-- Connect to desktop (works from both machines)
 	{
 		key = "1",
@@ -162,12 +171,12 @@ config.keys = {
 		action = wezterm.action.SpawnTab("CurrentPaneDomain"),
 	},
 	{
-		key = "d",
+		key = "v",
 		mods = "ALT",
 		action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }),
 	},
 	{
-		key = "D",
+		key = "V",
 		mods = "ALT|SHIFT",
 		action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }),
 	},
