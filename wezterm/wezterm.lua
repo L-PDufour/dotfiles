@@ -9,8 +9,6 @@ local is_remote_server = hostname:find("server") or os.getenv("SSH_CONNECTION")
 -- GUI-specific settings (only apply when running with GUI)
 if is_gui then
 	config.enable_wayland = true
-	config.front_end = "WebGpu"
-	config.webgpu_power_preference = "HighPerformance"
 	config.window_background_opacity = 0.98
 	config.font = wezterm.font("FiraCode NerdFont", { weight = "Medium" })
 	config.font_size = 16.0
@@ -25,7 +23,6 @@ if is_gui then
 	config.max_fps = 60
 	config.color_scheme = "Catppuccin Frappe"
 end
-
 -- Load plugins (works in both GUI and headless)
 local workspace_switcher = wezterm.plugin.require("https://github.com/MLFlexer/smart_workspace_switcher.wezterm")
 local resurrect = wezterm.plugin.require("https://github.com/MLFlexer/resurrect.wezterm")
@@ -33,9 +30,7 @@ local resurrect = wezterm.plugin.require("https://github.com/MLFlexer/resurrect.
 -- Universal settings
 config.allow_win32_input_mode = false
 config.term = "wezterm"
-config.enable_csi_u_key_encoding = true
-config.enable_kitty_keyboard = true
-
+config.disable_default_key_bindings = true
 -- Unified domain configuration (same on both machines)
 config.unix_domains = {
 	{
@@ -165,11 +160,11 @@ config.keys = {
 	},
 
 	-- Pane/tab management (universal)
-	{
-		key = "Enter",
-		mods = "ALT",
-		action = wezterm.action.SpawnTab("CurrentPaneDomain"),
-	},
+	-- {
+	-- 	key = "Enter",
+	-- 	mods = "ALT",
+	-- 	action = wezterm.action.SpawnTab("CurrentPaneDomain"),
+	-- },
 	{
 		key = "v",
 		mods = "ALT",
